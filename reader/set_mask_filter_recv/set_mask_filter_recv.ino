@@ -26,11 +26,12 @@ void setup() {
 
   TCCR1A = TCCR1A & 0xe0 | 2;
   TCCR1B = TCCR1B & 0xe0 | 0x0a;  // Изменение частоты для ЭУРа
-  analogWrite(9, 255);
+  analogWrite(9, 157);
+  analogWrite(10, 157);
   
   TCCR2B = 0b00000111;
   TCCR2A = 0b00000001;  // Эмулятор тахометра
-  analogWrite(3, 127);
+  analogWrite(3, 157);
   
   Serial.begin(115200);
   
