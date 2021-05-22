@@ -8,7 +8,7 @@
 
 
 char getSteeringAngle() {
-  int resPWM = analogRead(2);
+  int resPWM = analogRead(A0);
   return resPWM;
 }
 
@@ -24,14 +24,14 @@ char str[20];
 
 void setup() {
 
-  TCCR1A = TCCR1A & 0xe0 | 2;
-  TCCR1B = TCCR1B & 0xe0 | 0x0a;  // Изменение частоты для ЭУРа
-  analogWrite(9, 157);
-  analogWrite(10, 157);
+  //TCCR1A = TCCR1A & 0xe0 | 2;
+  //TCCR1B = TCCR1B & 0xe0 | 0x0a;  // Изменение частоты для ЭУРа
+  //analogWrite(9, 157);
+  //analogWrite(10, 157);
   
-  TCCR2B = 0b00000111;
-  TCCR2A = 0b00000001;  // Эмулятор тахометра
-  analogWrite(3, 157);
+  //TCCR2B = 0b00000111;
+  //TCCR2A = 0b00000001;  // Эмулятор тахометра
+  //analogWrite(3, 157);
   
   Serial.begin(115200);
   
@@ -47,7 +47,7 @@ void setup() {
   CAN.init_Mask(1, 0, 0x3ff);
   
   CAN.init_Filt(0, 0, 0x01); // запрос на получение угла поворота
-  CAN.init_Filt(0, 0, 0x03); // запрос управление ЭУРом
+  CAN.init_Filt(1, 0, 0x03); // запрос управление ЭУРом
 }
 
 void loop() {
