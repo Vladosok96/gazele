@@ -32,10 +32,10 @@ void setup() {
 }
 
 void loop() {
+    Serial.println("Request angle");
   if (digitalRead(7)){
     //CAN.sendMsgBuf(1, 0, 0, buf);                 // Запрос на получение угла
     EUR.setSteeringAngle(25);
-    Serial.println("Request angle");
     delay(200);
   }
   
