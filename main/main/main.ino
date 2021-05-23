@@ -10,7 +10,12 @@ class Wheel {
     unsigned char len = 0;
     unsigned char buf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     
-  public: 
+  public:
+    void calibrate() {                                   // Запуск калибровки
+      CAN.sendMsgBuf(4, 0, 0, buf);
+      Serial.print("Calibrate");
+    }
+   
     void setAngleNow(int angle) {                        // установка угла
       targetAngle = angle;
       buf[0] = targetAngle;

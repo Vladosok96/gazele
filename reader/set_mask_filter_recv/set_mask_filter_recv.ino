@@ -15,7 +15,7 @@ MCP_CAN CAN(SPI_CS_PIN);                    // Set CS pin
 unsigned char len = 0;
 unsigned char buf[8];
 int currentAngle = 360 * 2.5;
-int leftBoundary = eeprom_read_word(0);
+int whellKf = eeprom_read_word(0);
 bool autoMode = true;
 
 void setup() {
@@ -60,8 +60,17 @@ void loop() {
     }
 
     if (CAN.getCanId() == 0x04) {               // Запрос на обновление крайнего положения руля
-      leftBoundary = getSteeringAngle();
-      eeprom_update_word(0, getSteeringAngle());
+      analogWrite(9, 127);
+      analogWrite(10, 127);
+      
+      delay(30000);
+      int leftBoundary = getSteeringAngle();
+      delay(30000);
+      int rightBoundary = getSteeringAngle();
+
+      int result = 0; // Простой и надежный алгоритм калибровки и определения нуля по двум крайним точкам
+      
+      eeprom_update_word(0, result);
     }
   }
 
