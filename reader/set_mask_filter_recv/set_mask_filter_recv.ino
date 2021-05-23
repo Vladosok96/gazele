@@ -1,5 +1,6 @@
 #include <SPI.h>
 #include "mcp_can.h"
+#include <avr/eeprom.h>
 
 
 int getSteeringAngle() {                   // Получение угла поворота руля
@@ -13,7 +14,8 @@ MCP_CAN CAN(SPI_CS_PIN);                    // Set CS pin
 
 unsigned char len = 0;
 unsigned char buf[8];
-int steeringAngle = 360 * 2.5;
+int currentAngle = 360 * 2.5;
+int leftBoundary = eeprom_read_word(0);
 bool autoMode = true;
 
 void setup() {
@@ -40,46 +42,35 @@ void setup() {
   
   CAN.init_Filt(0, 0, 0x01); // запрос на получение угла поворота
   CAN.init_Filt(1, 0, 0x03); // запрос управление ЭУРом
+  CAN.init_Filt(2, 0, 0x04); // запрос на обновление крайнего положения руля
 }
 
 void loop() {
-  if (CAN_MSGAVAIL == CAN.checkReceive()) {      // Прорверка получения данных
+  if (CAN_MSGAVAIL == CAN.checkReceive()) {     // Прорверка получения данных
     
     CAN.readMsgBuf(&len, buf);    // read data
     
-    if (CAN.getCanId() == 0x01) {
-      Serial.print("Get Data From id: ");
-      Serial.println(CAN.getCanId());
-
+    if (CAN.getCanId() == 0x01) {               // Зпарос на отправку текущего положения руля
       buf[0] = getSteeringAngle();
-      Serial.print("data: ");
-      Serial.println(buf[0]);
       CAN.sendMsgBuf(2, 0, 1, buf);
-      
-      /*Serial.println("\r\n------------------------------------------------------------------");
-      Serial.print("Get Data From id: ");
-      Serial.println(CAN.getCanId());
-      for (int i = 0; i < len; i++) { // print the data
-        Serial.print("0x");
-        Serial.print(buf[i], HEX);
-        Serial.print("\t");
-      }
-      Serial.println();*/
     }
-    if (CAN.getCanId() == 0x03) {             // Запрос на установку положения руля
-      Serial.print("Get Data From id: ");
-      Serial.println(CAN.getCanId());
-      Serial.println("set sterring angle");
-      steeringAngle = buf[0];
+    
+    if (CAN.getCanId() == 0x03) {               // Запрос на установку положения руля
+      currentAngle = buf[0];
+    }
+
+    if (CAN.getCanId() == 0x04) {               // Запрос на обновление крайнего положения руля
+      leftBoundary = getSteeringAngle();
+      eeprom_update_word(0, getSteeringAngle());
     }
   }
 
-  if (autoMode) {                             // Поддержание угла поворота руля
-    if (steeringAngle > getSteeringAngle()) {
+  if (autoMode) {                               // Поддержание угла поворота руля
+    if (currentAngle > getSteeringAngle()) {
       analogWrite(9, 50);
       analogWrite(10, 200);
     }
-    else if (steeringAngle < getSteeringAngle()) {
+    else if (currentAngle < getSteeringAngle()) {
       analogWrite(9, 200);
       analogWrite(10, 50);
     }
