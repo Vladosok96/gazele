@@ -1,30 +1,31 @@
 #include <mcp_can.h>
 #include <SPI.h>
 
-class EurContol {  
-  EurContol () {
-    CAN = MCP_CAN(53);                                  // Set CS pin
-    
-    while (CAN_OK != CAN.begin(CAN_500KBPS)) {            // init can bus : baudrate = 500k
-        Serial.println("CAN BUS Shield init fail");
-        Serial.println(" Init CAN BUS Shield again");
-        delay(200);
+class EurContol { 
+  public: 
+    EurContol (int CSPIN) {
+      CAN = MCP_CAN(CSPIN);                                    // Set CS pin
+      while (CAN_OK != CAN.begin(CAN_500KBPS)) {            // init can bus : baudrate = 500k
+          Serial.println("CAN BUS Shield init fail");
+          Serial.println(" Init CAN BUS Shield again");
+          delay(200);
+      }
+      Serial.println("CAN BUS Shield init ok!");
     }
-    Serial.println("CAN BUS Shield init ok!");
-  }
-  
-  void setSteeringAngle(int angle) {                        // установка угла
-    buf[1] = angle;
-    CAN.sendMsgBuf(3, 0, 1, buf); 
-  }
-  
-  MCP_CAN CAN;
-  unsigned char len = 0;
-  unsigned char buf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+    
+    void setSteeringAngle(int angle) {                        // установка угла
+      buf[1] = angle;
+      CAN.sendMsgBuf(3, 0, 1, buf); 
+    }
+
+  private:
+    MCP_CAN CAN;
+    unsigned char len = 0;
+    unsigned char buf[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 };
 
 
-EurContol EUR();
+EurContol EUR(53);
 
 void setup() {
     Serial.begin(115200);
