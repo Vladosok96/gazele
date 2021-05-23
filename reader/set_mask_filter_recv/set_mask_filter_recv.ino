@@ -1,37 +1,29 @@
-// demo: CAN-BUS Shield, receive data with interrupt mode, and set mask and filter
-//
-// when in interrupt mode, the data coming can't be too fast, must >20ms, or else you can use check mode
-// loovee, 2014-7-8
-
 #include <SPI.h>
 #include "mcp_can.h"
 
 
-char getSteeringAngle() {
+int getSteeringAngle() {                   // Получение угла поворота руля
   int resPWM = analogRead(A0);
   return resPWM;
 }
 
 const int SPI_CS_PIN = 5;
 
-MCP_CAN CAN(SPI_CS_PIN);                                    // Set CS pin
+MCP_CAN CAN(SPI_CS_PIN);                    // Set CS pin
 
-const byte interruptPin = 0;
-unsigned char flagRecv = 0;
 unsigned char len = 0;
 unsigned char buf[8];
-char str[20];
+int steeringAngle = 360 * 2.5;
+bool autoMode = true;
 
 void setup() {
 
-  //TCCR1A = TCCR1A & 0xe0 | 2;
-  //TCCR1B = TCCR1B & 0xe0 | 0x0a;  // Изменение частоты для ЭУРа
-  //analogWrite(9, 157);
-  //analogWrite(10, 157);
+  TCCR1A = TCCR1A & 0xe0 | 2;
+  TCCR1B = TCCR1B & 0xe0 | 0x0a;            // Изменение частоты на 9 и 10 пинах до 3900гц для ЭУРа
   
-  //TCCR2B = 0b00000111;
-  //TCCR2A = 0b00000001;  // Эмулятор тахометра
-  //analogWrite(3, 157);
+  TCCR2B = 0b00000111;
+  TCCR2A = 0b00000001;                      // Эмулятор тахометра 30гц
+  analogWrite(3, 157);
   
   Serial.begin(115200);
   
@@ -51,7 +43,7 @@ void setup() {
 }
 
 void loop() {
-  if (CAN_MSGAVAIL == CAN.checkReceive()) {      // check if get data
+  if (CAN_MSGAVAIL == CAN.checkReceive()) {      // Прорверка получения данных
     
     CAN.readMsgBuf(&len, buf);    // read data
     
@@ -74,15 +66,22 @@ void loop() {
       }
       Serial.println();*/
     }
-    if (CAN.getCanId() == 0x03) {
+    if (CAN.getCanId() == 0x03) {             // Запрос на установку положения руля
       Serial.print("Get Data From id: ");
       Serial.println(CAN.getCanId());
+      Serial.println("set sterring angle");
+      steeringAngle = buf[0];
+    }
+  }
 
-      
+  if (autoMode) {                             // Поддержание угла поворота руля
+    if (steeringAngle > getSteeringAngle()) {
+      analogWrite(9, 50);
+      analogWrite(10, 200);
+    }
+    else if (steeringAngle < getSteeringAngle()) {
+      analogWrite(9, 200);
+      analogWrite(10, 50);
     }
   }
 }
-
-/*********************************************************************************************************
-    END FILE
-*********************************************************************************************************/
