@@ -18,24 +18,26 @@ int getSteeringAngle() {                   // Получение угла пов
 }
 
 void setup() {
-
-  TCCR1A = 0b00000001;
-  TCCR1B = 0b00000010;
-
-  tone(3, 25);
-  //TCCR2B = 0b00000111;
-  //TCCR2A = 0b00000001;                      // Эмулятор тахометра 30гц
-  //analogWrite(3, 157);
-  analogWrite(9, 127 + 20);
-  analogWrite(10, 127 + 20);
-  analogWrite(6, 127);
+  
+  analogWrite(6, 127);            // Сигнал запуска
   delay(300);
   digitalWrite(6, 0);
 
-  wheelOffset = eeprom_read_word(0);
-
   pinMode(9, OUTPUT);
   pinMode(10, OUTPUT);
+  TCCR1A = 0b00000001;            // Установка частоты для эмулятора датчика усилия 3900гц
+  TCCR1B = 0b00000010;
+  analogWrite(9, 127);            // Остановка усилителя
+  analogWrite(10, 127);
+
+  
+  tone(3, 25);                    // Эмулятор тахометра 30гц
+  //TCCR2B = 0b00000111;
+  //TCCR2A = 0b00000001;
+  //analogWrite(3, 157);
+
+  wheelOffset = eeprom_read_word(0); // Считывание нулевого положения руля из eeporn
+
   
   Serial.begin(115200);
   
@@ -46,14 +48,13 @@ void setup() {
   }
   Serial.println("CAN BUS Shield init ok!");
   
-  // Фильтрция сообщений
-  CAN.init_Mask(0, 0, 0x3ff);
+  CAN.init_Mask(0, 0, 0x3ff); // Фильтрция сообщений
   CAN.init_Mask(1, 0, 0x3ff);
   
-  CAN.init_Filt(0, 0, 0x01); // запрос на получение угла поворота
-  CAN.init_Filt(1, 0, 0x03); // запрос управление ЭУРом
-  CAN.init_Filt(2, 0, 0x04); // запрос на обновление крайнего положения руля
-  CAN.init_Filt(3, 0, 0x05); // принудительная установка напряжения ЭУРа
+  CAN.init_Filt(0, 0, 0x01);  // запрос на получение угла поворота
+  CAN.init_Filt(1, 0, 0x03);  // запрос управление ЭУРом
+  CAN.init_Filt(2, 0, 0x04);  // запрос на обновление крайнего положения руля
+  CAN.init_Filt(3, 0, 0x05);  // принудительная установка напряжения ЭУРа
 }
 
 void loop() {
@@ -80,7 +81,8 @@ void loop() {
       delay(500);
       digitalWrite(6, 0);
       delay(29500);
-      int leftBoundary = analogRead(A0);
+      int leftBoundary = analogRead(A0);    // Считывание крайнего левого положения
+      
       analogWrite(6, 127);
       delay(500);
       digitalWrite(6, 0);
@@ -89,7 +91,8 @@ void loop() {
       delay(500);
       digitalWrite(6, 0);
       delay(28500);
-      int rightBoundary = analogRead(A0);
+      int rightBoundary = analogRead(A0);   // Считывание крайнего правого положения
+      
       analogWrite(6, 127);
       delay(500);
       digitalWrite(6, 0);
@@ -102,30 +105,31 @@ void loop() {
       delay(500);
       digitalWrite(6, 0);
 
-      int result = (leftBoundary + rightBoundary) / 2; // Простой и надежный алгоритм калибровки и определения нуля по двум крайним точкам
+      int result = (leftBoundary + rightBoundary) / 2; // Простой и надежный алгоритм калибровки и определения нуля по двум крайним точкам (ПиНАКиОНпДКТ)
       
-      eeprom_update_word(0, result);
+      eeprom_update_word(0, result);        // Запись среднего положения руля в eeporn
       wheelOffset = eeprom_read_word(0);
     }
 
-    if (CAN.getCanId() == 0x05) {               // Ставим напряжения
+    if (CAN.getCanId() == 0x05) {               // Ручная установка напряжения на усилителе
       autoMode = false;
-      analogWrite(9, buf[0] + 20);
-      analogWrite(10, 255 - buf[0] + 20);
+      analogWrite(9, buf[0]);
+      analogWrite(10, 255 - buf[0]);
     }
   }
 
   if (autoMode) {                               // Поддержание угла поворота руля
-    int difference = 20 * sqrt(abs(currentAngle - getSteeringAngle()));
-    if (difference > 235)
-      difference = 235;
+    int difference = 10 * sqrt(abs(currentAngle - getSteeringAngle()));
+    
+    if (difference > 100)
+      difference = 100;
     if (currentAngle > getSteeringAngle()) {
-      analogWrite(9, 255 - difference + 20);
-      analogWrite(10, difference + 20);
+      analogWrite(9, 255 - difference);
+      analogWrite(10, difference);
     }
     else {
       analogWrite(9, difference + 20);
-      analogWrite(10, 255 - difference + 20);
+      analogWrite(10, 255 - difference);
     }
   }
 }
