@@ -13,7 +13,13 @@ class Wheel {
   public:
     void calibrate() {                                   // Запуск калибровки
       CAN.sendMsgBuf(4, 0, 0, buf);
-      Serial.print("Calibrate");
+      Serial.println("Calibrate");
+    }
+
+    void setPWM(int val) {                                   // Запуск калибровки
+      buf[0] = val;
+      CAN.sendMsgBuf(5, 0, 1, buf);
+      Serial.println("Succes set pwm");
     }
    
     void setAngleNow(int angle) {                        // установка угла
@@ -71,18 +77,45 @@ Wheel wheel;
 
 void setup() {
   Serial.begin(115200);
+  Serial.setTimeout(100);
   Serial.println("Start");
   wheel.init();
+  Serial.println("Type action id");
 }
 
 void loop() {
-  if (digitalRead(7)) {
-    wheel.setAngleNow(25);
-    delay(200);
-  }
+  int action = 0;
+  if (Serial.available() > 0) {
+      action = Serial.parseInt();
 
-  if (digitalRead(6)) {
-    wheel.getAngleNow();
-    delay(200);
-  }
+      if (action == 1) {
+        wheel.getAngleNow();
+      }
+      else if (action == 3) {
+        int angle = 9999;
+        Serial.println("Type target angle");
+        while(angle == 9999){
+          if (Serial.available() > 0) {
+            angle = Serial.parseInt();
+          }
+        }
+        wheel.setAngleNow(angle);
+      }
+      else if (action == 4) {
+        wheel.calibrate();
+      }
+      else if (action == 5) {
+        int val = 9999;
+        Serial.println("Type pwm value");
+        while(val == 9999){
+          if (Serial.available() > 0) {
+            val = Serial.parseInt();
+          }
+        }
+        Serial.println(val);
+        wheel.setPWM(val);
+      }
+    }
+
+  delay(50);
 }
