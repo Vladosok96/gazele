@@ -128,7 +128,7 @@ void loop() {
       analogWrite(10, difference);
     }
     else {
-      analogWrite(9, difference + 20);
+      analogWrite(9, difference);
       analogWrite(10, 255 - difference);
     }
   }
