@@ -72,8 +72,9 @@ class Wheel {
     } 
 };
 
-
+double sosok;
 Wheel wheel;
+int remote = -1;
 
 void setup() {
   Serial.begin(115200);
@@ -86,39 +87,48 @@ void setup() {
 void loop() {
   int action = 0;
   if (Serial.available() > 0) {
-      action = Serial.parseInt();
+    action = Serial.parseInt();
 
-      if (action == 1) {                      // Запрос на получение текущего угла
-        wheel.getAngleNow();
-      }
-      
-      else if (action == 3) {                 // Запрос на отправку целевого угла
-        int angle = 9999;
-        Serial.println("Type target angle");
-        while(angle == 9999){
-          if (Serial.available() > 0) {
-            angle = Serial.parseInt();
-          }
-        }
-        wheel.setAngleNow(angle);
-      }
-      
-      else if (action == 4) {                 // Запрос на запуск калибровки
-        wheel.calibrate();
-      }
-      
-      else if (action == 5) {                 // Запрос на отправку напряжения
-        int val = 9999;
-        Serial.println("Type pwm value");
-        while(val == 9999){
-          if (Serial.available() > 0) {
-            val = Serial.parseInt();
-          }
-        }
-        Serial.println(val);
-        wheel.setPWM(val);
-      }
+    if (action == 1) {                      // Запрос на получение текущего угла
+      wheel.getAngleNow();
     }
-
+    
+    else if (action == 3) {                 // Запрос на отправку целевого угла
+      int angle = 9999;
+      Serial.println("Type target angle");
+      while(angle == 9999){
+        if (Serial.available() > 0) {
+          angle = Serial.parseInt();
+        }
+      }
+      wheel.setAngleNow(angle);
+    }
+    
+    else if (action == 4) {                 // Запрос на запуск калибровки
+      wheel.calibrate();
+    }
+    
+    else if (action == 5) {                 // Запрос на отправку напряжения
+      int val = 9999;
+      Serial.println("Type pwm value");
+      while(val == 9999){
+        if (Serial.available() > 0) {
+          val = Serial.parseInt();
+        }
+      }
+      Serial.println(val);
+      wheel.setPWM(val);
+    }
+    else if (action == 6) {
+      remote *= -1;
+    }
+  }
+  
+  if (remote == 1) {                         // Режим дистанционного управления
+    int pulse = pulseIn(7, HIGH, 42000);
+    sosok = (pulse - 994) / 1000.0;
+    wheel.setPWM(int(sosok * 195 + 30));
+  }
+  
   delay(50);
 }

@@ -17,11 +17,16 @@ int getSteeringAngle() {                   // Получение угла пов
   return resPWM;
 }
 
+void beep(int _delay) {
+  analogWrite(6, 127);
+  delay(_delay);
+  digitalWrite(6, 0);
+  delay(150);
+}
+
 void setup() {
   
-  analogWrite(6, 127);            // Сигнал запуска
-  delay(300);
-  digitalWrite(6, 0);
+  beep(300);            // Сигнал запуска
 
   pinMode(9, OUTPUT);
   pinMode(10, OUTPUT);
@@ -73,37 +78,22 @@ void loop() {
       currentAngle = (buf[1] << 8) + buf[0];
     }
 
-    if (CAN.getCanId() == 0x04) {               // Запрос на обновление крайнего положения руля
+    if (CAN.getCanId() == 0x04) {               // Запрос на калибровку положения руля
       analogWrite(9, 127);
       analogWrite(10, 127);
 
-      analogWrite(6, 127);
-      delay(500);
-      digitalWrite(6, 0);
-      delay(29500);
+      beep(300);
+      delay(15000);
       int leftBoundary = analogRead(A0);    // Считывание крайнего левого положения
       
-      analogWrite(6, 127);
-      delay(500);
-      digitalWrite(6, 0);
-      delay(500);
-      analogWrite(6, 127);
-      delay(500);
-      digitalWrite(6, 0);
-      delay(28500);
+      beep(300);
+      beep(300);
+      delay(15000);
       int rightBoundary = analogRead(A0);   // Считывание крайнего правого положения
       
-      analogWrite(6, 127);
-      delay(500);
-      digitalWrite(6, 0);
-      delay(500);
-      analogWrite(6, 127);
-      delay(500);
-      digitalWrite(6, 0);
-      delay(500);
-      analogWrite(6, 127);
-      delay(500);
-      digitalWrite(6, 0);
+      beep(300);
+      beep(300);
+      beep(300);
 
       int result = (leftBoundary + rightBoundary) / 2; // Простой и надежный алгоритм калибровки и определения нуля по двум крайним точкам (ПиНАКиОНпДКТ)
       
@@ -113,16 +103,27 @@ void loop() {
 
     if (CAN.getCanId() == 0x05) {               // Ручная установка напряжения на усилителе
       autoMode = false;
-      analogWrite(9, buf[0]);
-      analogWrite(10, 255 - buf[0]);
+      analogWrite(10, buf[0]);
+      analogWrite(9, 255 - buf[0]);
+      
+      int difference = 127 + int(10.0 * sqrt(610 - abs(getSteeringAngle())) * (buf[0] - 127) / 127.0);
+      Serial.println(difference);
+      if (difference > 200)
+        difference = 200;
+      if (difference < 55)
+        difference = 55;
+      
+      analogWrite(10, difference);
+      analogWrite(9, 255 - difference);
     }
   }
 
   if (autoMode) {                               // Поддержание угла поворота руля
-    int difference = 10 * sqrt(abs(currentAngle - getSteeringAngle()));
-    
-    if (difference > 100)
-      difference = 100;
+    int difference = 127 + int(10.0 * sqrt(abs(currentAngle - getSteeringAngle())));
+    Serial.println(difference);
+    if (difference > 200)
+      difference = 200;
+
     if (currentAngle > getSteeringAngle()) {
       analogWrite(9, 255 - difference);
       analogWrite(10, difference);
