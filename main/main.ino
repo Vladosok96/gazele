@@ -16,13 +16,13 @@ class Wheel {
       Serial.println("Calibrate");
     }
 
-    void setPWM(int val) {                                   // Запуск калибровки
+    void setPWM(int val) {                               // Установка напряжения
       buf[0] = val;
       CAN.sendMsgBuf(5, 0, 1, buf);
       Serial.println("Succes set pwm");
     }
    
-    void setAngleNow(int angle) {                        // установка угла
+    void setAngleNow(int angle) {                        // Установка угла
       targetAngle = angle;
       buf[0] = targetAngle;
       byte *tempBuf = (byte*)&angle;
@@ -72,7 +72,7 @@ class Wheel {
     } 
 };
 
-double sosok;
+double leftX;
 Wheel wheel;
 int remote = -1;
 
@@ -126,8 +126,8 @@ void loop() {
   
   if (remote == 1) {                         // Режим дистанционного управления
     int pulse = pulseIn(7, HIGH, 42000);
-    sosok = (pulse - 994) / 1000.0;
-    wheel.setPWM(int(sosok * 195 + 30));
+    leftX = (pulse - 994) / 1000.0;
+    wheel.setPWM(int(leftX * 195 + 30));
   }
   
   delay(50);
